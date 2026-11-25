@@ -1,0 +1,1564 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#172033">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Mi GTD</title>
+
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f2f5fb;color:#202b42;margin:0;padding:15px}
+header{background:#fff;color:#344563;padding:8px 12px;border:1px solid #e5eaf3;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{color:#294575}
+header p{color:#64748b}
+header h1{font-size:19px;margin:0;font-weight:650}
+header p{font-size:12px;margin:0;opacity:.8}
+main{max-width:1050px;margin:15px auto}
+section{background:white;padding:18px;border:1px solid #e5eaf3;border-radius:13px;margin-bottom:13px;box-shadow:0 2px 8px #243b6410}
+input,select,textarea{padding:10px;border:1px solid #cbd5e1;border-radius:8px;width:100%;min-width:0;font:inherit;background:#fff}
+textarea{min-height:65px;resize:vertical}
+button{background:#3157d5;color:white;border:1px solid transparent;border-radius:8px;padding:8px 11px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+button:hover:not(:disabled){filter:brightness(.94);box-shadow:0 2px 6px #243b6420}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+form{display:flex;gap:8px;flex-wrap:wrap}
+form input{flex:1}
+.hidden{display:none!important}
+.secondary{background:#eef2f7;color:#475467;border-color:#d5dce7}
+.green{background:#16804a;color:#fff}
+.red{background:#b42318;color:#fff}
+/* Acciones: primarias en azul, confirmaciones en verde y destructivas en rojo. */
+.task-actions button[title*="Eliminar"],button.red{background:#b42318;color:#fff}
+.task-actions button[title*="Completar"],button.green{background:#16804a;color:#fff}
+.task-actions button[title*="Archivar"]{background:#eef2f7;color:#475467;border-color:#d5dce7}
+.task{border-bottom:1px solid #e8edf5;padding:10px 9px;border-left:3px solid #7c9bea;margin:7px 0;background:#fbfcff;border-radius:0 9px 9px 0}
+.task.state-action{border-left-color:#3157d5}.task.state-waiting{border-left-color:#e58a25}.task.state-overdue{border-left-color:#c93636}.task.state-completed{border-left-color:#16804a}.task.state-muted{border-left-color:#98a2b3}
+.task-mainline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.task-title{font-weight:650;margin:0;overflow-wrap:anywhere;cursor:pointer;flex:1 1 220px}
+.task-title:hover{color:#3157d5}
+.task-date-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.date-badge{font-size:12px;line-height:1.35;padding:3px 6px;border-radius:6px;white-space:nowrap;background:#eaf0ff;color:#3157a4}
+.date-badge.due{background:#fff0e8;color:#b54708}
+.date-badge.reminder{background:#f1eaff;color:#6941a5}
+.task-description-preview{font-size:12px;color:#667085;margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.task-detail-overlay{position:fixed;inset:0;background:#10182899;z-index:1000;display:flex;align-items:center;justify-content:center;padding:14px}
+.task-detail-panel{background:#fff;border-radius:14px;width:min(720px,100%);max-height:92vh;overflow:auto;padding:20px;box-shadow:0 16px 50px #10182840}
+.task-detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.task-detail-head h2{margin:0}
+.task-detail-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.task-detail-form .field.full{grid-column:1/-1}
+.task-detail-form textarea{min-height:125px}
+.task-detail-footer{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.task-title{font-weight:bold;margin-bottom:7px;overflow-wrap:anywhere}
+.task-meta{font-size:12px;color:#64748b;margin:6px 0}
+.task-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:10px}
+.task-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.task-actions button,.icon-button{width:34px;height:32px;padding:6px;display:inline-flex;align-items:center;justify-content:center}
+.icon-button svg,.task-actions button svg{width:17px;height:17px;display:block}
+.icon-button:focus-visible,button:focus-visible{outline:3px solid #9bb8ff;outline-offset:2px}
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0}
+ .nav button{background:#f0f3f8;color:#475467;border:1px solid #dce3ed;padding:8px 11px}
+.nav button[data-view="inbox"]:not(.active){background:#eaf1ff;color:#3157a4;border-color:#d6e3ff}
+.nav button[data-view="actions"]:not(.active){background:#e7f6f3;color:#087e70;border-color:#ccebe5}
+.nav button[data-view="agenda"]:not(.active){background:#f2edff;color:#6941a5;border-color:#e4d9ff}
+.nav button[data-view="history"]:not(.active){background:#eef1f5;color:#526071;border-color:#dce2e9}
+.nav button[data-view="projects"]:not(.active){background:#edf0ff;color:#414fa3;border-color:#dce1ff}
+.nav button[data-view="areas"]:not(.active){background:#edf7e9;color:#477b35;border-color:#d9ebd1}
+.nav button[data-view="contexts"]:not(.active){background:#fff5e8;color:#9a5b12;border-color:#f5e2c6}
+.nav button[data-view="someday"]:not(.active){background:#e9f7fb;color:#176b83;border-color:#d1edf4}
+.nav button[data-view="reference"]:not(.active){background:#f1f2f4;color:#596273;border-color:#e0e3e8}
+.nav button[data-view="weekly"]:not(.active){background:#fff0f0;color:#a33b50;border-color:#f4d7dd}
+.weekly-phase{border:1px solid #e1e8f2;border-radius:10px;padding:13px;margin:10px 0;background:#fbfcff}.weekly-phase-head{display:flex;align-items:flex-start;gap:10px}.weekly-phase-head input{width:auto;margin-top:4px}.weekly-phase h3{margin:0 0 5px}.weekly-count{display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#eaf1ff;color:#3157a4;font-size:11px;font-weight:700;white-space:nowrap}.weekly-count.zero{background:#edf7ef;color:#267044}.weekly-count.warn{background:#fff2df;color:#965b0b}.weekly-count.muted{background:#eef1f5;color:#596273}.weekly-phase-title{display:flex;align-items:center;flex-wrap:wrap;gap:3px}.weekly-phase p{margin:4px 0 9px}.weekly-phase textarea{min-height:55px}.weekly-progress{height:9px;background:#e8edf5;border-radius:9px;overflow:hidden;margin:10px 0}.weekly-progress>div{height:100%;background:#16804a;width:0;transition:width .2s}.weekly-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.weekly-toolbar button{margin-left:auto}
+.nav button.active{background:#253f8f;color:white;border-color:#253f8f;box-shadow:0 2px 7px #253f8f35}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #e8edf5;padding:10px 0}
+.item span{overflow-wrap:anywhere}
+.small{font-size:12px;color:#667085}
+#message{color:#b42318;overflow-wrap:anywhere}
+#syncStatus{font-size:12px;color:#16804a;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:13px;color:#475467}
+h2{font-size:18px;color:#2c477a;margin-top:4px}
+h3{font-size:15px;color:#526b99}
+.agenda-controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.agenda-controls select{width:auto;flex:1;min-width:140px}
+.date-editor{max-width:280px;margin-top:8px}
+.project-card{border:1px solid #dfe7f4;border-radius:10px;margin:9px 0;overflow:hidden}
+.project-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;background:#edf3ff;color:#294575;padding:12px;font-weight:600}
+.project-details{padding:10px 12px;background:#fff}
+.project-count{font-size:12px;color:#64748b;font-weight:400}
+
+@media(max-width:500px){
+ body{padding:8px}
+ header{padding:10px 12px}
+ section{padding:12px}
+ form{flex-direction:column}
+ form button{width:100%}
+ .agenda-controls button{flex:1}
+ .task-controls{grid-template-columns:1fr 1fr}
+ .task-detail-panel{padding:15px}
+ .task-detail-form{grid-template-columns:1fr}
+ .task-detail-form .field.full{grid-column:auto}
+}
+
+/* Mejoras de revisión semanal */
+.weekly-overview{border:1px solid #dce5f2;background:#f8faff;border-radius:12px;padding:14px;margin:14px 0}
+.weekly-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-top:10px}
+.weekly-metric{background:#fff;border:1px solid #e4eaf3;border-radius:9px;padding:10px}
+.weekly-metric strong{display:block;font-size:22px;color:#294575}
+.weekly-metric span{font-size:11px;color:#667085}
+.weekly-issues{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:10px}
+.weekly-issue{background:#fff;border:1px solid #e4eaf3;border-radius:9px;padding:10px;font-size:12px}
+.weekly-issue strong{display:block;margin-bottom:4px;color:#344563}
+.weekly-count{border:0;cursor:pointer;font:inherit}
+.weekly-count:focus-visible{outline:3px solid #9bb8ff;outline-offset:2px}
+.weekly-modal{position:fixed;inset:0;background:#10182899;z-index:1200;display:flex;align-items:center;justify-content:center;padding:14px}
+.weekly-modal-panel{background:#fff;border-radius:14px;width:min(760px,100%);max-height:90vh;overflow:auto;padding:18px;box-shadow:0 16px 50px #10182840}
+.weekly-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:-18px;background:#fff;padding:4px 0 12px;z-index:1}
+.weekly-modal-head h3{margin:0}
+.weekly-modal-item{padding:10px;border-bottom:1px solid #e8edf5}
+.weekly-modal-item strong{display:block;margin-bottom:3px}
+.weekly-modal-item small{color:#667085;display:block;line-height:1.5}
+.weekly-modal-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.weekly-report{border:1px solid #cfe5d5;background:#f7fcf8;border-radius:12px;padding:14px;margin-top:14px}
+.weekly-history-row{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.weekly-history-row button{margin-left:auto}
+.weekly-hint{font-size:12px;color:#667085;margin:7px 0 0}
+@media(max-width:500px){.weekly-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-modal-panel{padding:14px}}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Mi GTD</h1>
+<p>Tu sistema personal de organización</p>
+</header>
+
+<main>
+
+<section id="login">
+<h2>Iniciar sesión</h2>
+<form id="loginForm">
+<input id="email" type="email" placeholder="Correo electrónico" required>
+<input id="password" type="password" placeholder="Contraseña" required>
+<button type="submit">Entrar</button>
+</form>
+<p id="message"></p>
+</section>
+
+<div id="application" class="hidden">
+
+<section>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+<strong id="userEmail"></strong>
+<button id="logout" class="secondary icon-button" title="Cerrar sesión" aria-label="Cerrar sesión"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg></button>
+</div>
+<p class="small" id="workspaceName"></p>
+<div id="syncStatus">Sincronización: conectando...</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+  <button id="enablePush" type="button" class="secondary">Activar notificaciones</button>
+  <span id="pushStatus" class="small" aria-live="polite">Notificaciones no activadas en este dispositivo</span>
+</div>
+</section>
+
+<div class="nav">
+<button data-view="inbox" class="active">Bandeja</button>
+<button data-view="actions">Próximas acciones</button>
+<button data-view="agenda">Agenda</button>
+<button data-view="history">Historial</button>
+<button data-view="projects">Proyectos</button>
+<button data-view="areas">Áreas</button>
+<button data-view="contexts">Contextos</button>
+<button data-view="someday">Algún día</button>
+<button data-view="reference">Referencias</button>
+<button data-view="weekly">Revisión semanal</button>
+</div>
+
+<section id="view-inbox">
+<h2>Bandeja de entrada</h2>
+<p class="small">Captura primero. Procesa cada elemento cuando tengas tiempo.</p>
+<form id="captureForm">
+<input id="captureTitle" placeholder="¿Qué tienes que hacer?" required>
+<button type="submit" title="Capturar" aria-label="Capturar">＋</button>
+</form>
+<div id="inboxTasks"></div>
+</section>
+
+<section id="view-actions" class="hidden">
+<h2>Próximas acciones</h2>
+<div id="actionTasks"></div>
+</section>
+
+<section id="view-agenda" class="hidden">
+<h2>Agenda</h2>
+
+<div class="agenda-controls">
+<button id="agendaPrev" class="secondary" title="Periodo anterior" aria-label="Periodo anterior">‹</button>
+<button id="agendaToday" title="Ir a hoy" aria-label="Ir a hoy">Hoy</button>
+<button id="agendaNext" class="secondary" title="Periodo siguiente" aria-label="Periodo siguiente">›</button>
+<select id="agendaMode">
+<option value="week">Vista semanal</option>
+<option value="month">Vista mensual</option>
+</select>
+</div>
+
+<h3 id="agendaLabel"></h3>
+
+<h3>Tareas atrasadas</h3>
+<div id="agendaOverdue"></div>
+
+<h3>Tareas del periodo</h3>
+<div id="agendaTasks"></div>
+</section>
+
+<section id="view-history" class="hidden">
+<h2>Historial de tareas completadas</h2>
+<p class="small">Consulta las tareas terminadas y corrige su fecha de finalización si es necesario.</p>
+<div id="historyTasks"></div>
+</section>
+
+<section id="view-someday" class="hidden">
+<h2>Algún día / Tal vez</h2>
+<div id="somedayTasks"></div>
+</section>
+
+<section id="view-reference" class="hidden">
+<h2>Material de referencia</h2>
+<div id="referenceTasks"></div>
+</section>
+
+<section id="view-weekly" class="hidden">
+<h2>Revisión semanal</h2>
+<p class="small">Una revisión completa para recuperar el control de tu sistema GTD. Marca cada fase cuando la hayas terminado; los cambios se guardan en tu cuenta.</p>
+<div class="weekly-toolbar"><strong id="weeklyPeriod"></strong><span id="weeklyProgressText" class="small">0 de 7 fases completadas</span></div>
+<div class="weekly-progress"><div id="weeklyProgressBar"></div></div>
+<div id="weeklyOverview" class="weekly-overview"></div>
+<div id="weeklyPhases"></div>
+<div id="weeklyReport" class="weekly-report hidden"></div>
+<div class="field" style="margin-top:14px"><label for="weeklyNotes">Notas generales de esta revisión</label><textarea id="weeklyNotes" placeholder="Ideas, decisiones o asuntos que quieras recordar..."></textarea></div>
+<div class="weekly-toolbar" style="margin-top:10px"><span id="weeklySaveStatus" class="small" aria-live="polite">Revisión aún no guardada</span><button id="finishWeekly" type="button" class="green">Finalizar revisión</button></div>
+<h3 style="margin-top:22px">Revisiones anteriores</h3><div id="weeklyHistory"></div>
+</section>
+
+<section id="view-projects" class="hidden">
+<h2>Proyectos</h2>
+<form id="projectForm">
+<input id="projectName" placeholder="Nombre del proyecto" required>
+<button type="submit" title="Crear proyecto" aria-label="Crear proyecto">＋</button>
+</form>
+<div id="projectsList"></div>
+</section>
+
+<section id="view-areas" class="hidden">
+<h2>Áreas de responsabilidad</h2>
+<form id="areaForm">
+<input id="areaName" placeholder="Nombre del área" required>
+<button type="submit" title="Crear área" aria-label="Crear área">＋</button>
+</form>
+<div id="areasList"></div>
+</section>
+
+<section id="view-contexts" class="hidden">
+<h2>Contextos</h2>
+<form id="contextForm">
+<input id="contextName" placeholder="Ej. @casa, @ordenador, @teléfono" required>
+<button type="submit" title="Crear contexto" aria-label="Crear contexto">＋</button>
+</form>
+<div id="contextsList"></div>
+</section>
+
+<section>
+<button id="export" title="Exportar copia de seguridad" aria-label="Exportar copia de seguridad">↓</button>
+</section>
+
+</div>
+</main>
+
+<div id="weeklyModal" class="weekly-modal hidden" role="dialog" aria-modal="true" aria-labelledby="weeklyModalTitle">
+  <div class="weekly-modal-panel">
+    <div class="weekly-modal-head"><h3 id="weeklyModalTitle">Elementos de revisión</h3><button type="button" id="closeWeeklyModal" class="secondary">Cerrar</button></div>
+    <div id="weeklyModalBody"></div>
+  </div>
+</div>
+
+<div id="taskDetailOverlay" class="task-detail-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="taskDetailHeading"><div class="task-detail-panel"><div class="task-detail-head"><h2 id="taskDetailHeading">Detalles de la tarea</h2><button type="button" id="closeTaskDetail" class="secondary" aria-label="Cerrar">✕</button></div><form id="taskDetailForm"><div class="task-detail-form"><div class="field full"><label for="detailTitle">Título</label><input id="detailTitle" required maxlength="250"></div><div class="field full"><label for="detailNotes">Más detalles / descripción</label><textarea id="detailNotes" placeholder="Describe qué hay que hacer, información útil, enlaces, pasos..."></textarea></div><div class="field"><label for="detailKind">Tipo</label><select id="detailKind"><option value="action">Próxima acción</option><option value="waiting_for">Pendiente de otra persona</option><option value="someday_maybe">Algún día / Tal vez</option><option value="reference">Referencia</option></select></div><div class="field"><label for="detailStatus">Estado</label><select id="detailStatus"><option value="inbox">Bandeja</option><option value="active">Activa</option><option value="scheduled">Programada</option><option value="waiting">En espera</option><option value="completed">Realizada</option><option value="archived">Archivada</option></select></div><div class="field"><label for="detailProject">Proyecto</label><select id="detailProject"></select></div><div class="field"><label for="detailArea">Área</label><select id="detailArea"></select></div><div class="field"><label for="detailContext">Contexto</label><select id="detailContext"></select></div><div class="field"><label for="detailWaiting">Esperando a</label><input id="detailWaiting" placeholder="Persona o elemento del que dependes"></div><div class="field"><label for="detailScheduled">Fecha programada</label><input id="detailScheduled" type="date"></div><div class="field"><label for="detailDue">Fecha límite</label><input id="detailDue" type="date"></div><div class="field full"><label for="detailReminder">Recordarme el (fecha y hora)</label><input id="detailReminder" type="datetime-local"></div></div><div class="task-detail-footer"><button type="button" id="cancelTaskDetail" class="secondary">Cancelar</button><button type="submit">Guardar tarea</button></div></form></div></div>
+<script type="module">
+import { createClient } from
+'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://ywdcbviwkxtpawktzksc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vV683CF7NXaEz9yJ_TaUpw_aw33Jr-1';
+
+// Clave pública VAPID: es pública y se utiliza para registrar este dispositivo.
+const VAPID_PUBLIC_KEY = 'BMpSeJKZHEQEnbETF_JZE9TeOVggpT525_fTGtr8Kys3sCOdhbrOhfeREyxoX8PIOx1W5CTlFSQQoLQzQq1qifk';
+let serviceWorkerRegistration = null;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+
+let currentUser = null;
+let workspaceId = null;
+let tasks = [];
+let projects = [];
+let areas = [];
+let contexts = [];
+let realtimeChannel = null;
+let loading = false;
+let currentView = 'inbox';
+let weeklyReview = null;
+let weeklySaveTimer = null;
+let weeklySaving = false;
+const WEEKLY_PHASES = [
+  {id:'collect',title:'1. Recopilar',description:'Vacía la bandeja de entrada. Reúne notas, tareas y compromisos pendientes.'},
+  {id:'process',title:'2. Procesar',description:'Aclara qué significa cada elemento y decide si requiere acción, proyecto, referencia o si puedes descartarlo.'},
+  {id:'projects',title:'3. Revisar proyectos',description:'Comprueba que cada proyecto activo sigue vigente, tiene un resultado claro y una próxima acción definida.'},
+  {id:'actions',title:'4. Revisar próximas acciones',description:'Repasa las acciones activas y programadas. En las tareas en espera, comprueba a quién esperas, desde cuándo y si debes hacer seguimiento.'},
+  {id:'agenda',title:'5. Revisar agenda',description:'Mira los compromisos pasados y los próximos días. Detecta seguimientos y preparativos necesarios.'},
+  {id:'someday',title:'6. Revisar algún día / tal vez',description:'Decide qué ideas siguen teniendo sentido, cuáles pasan a proyectos o acciones y cuáles puedes eliminar.'},
+  {id:'creative',title:'7. Ser creativo',description:'Piensa en nuevas posibilidades, mejoras, objetivos e ideas que quieras capturar.'}
+];
+
+let agendaMode = 'week';
+let agendaDate = new Date();
+
+function errorMessage(error) {
+  $('message').textContent = error.message || String(error);
+}
+
+function clearMessage() {
+  $('message').textContent = '';
+}
+
+function escapeText(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+const ICONS = {
+  save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+  archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>',
+  calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v3l2 1"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  chevron: '<path d="m9 18 6-6-6-6"/>',
+  logout: '<path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/>'
+};
+
+function iconButton(iconName, title, className = '', onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = ('icon-button ' + className).trim();
+  button.title = title;
+  button.setAttribute('aria-label', title);
+  button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[iconName] || ICONS.edit}</svg>`;
+  if (onClick) button.addEventListener('click', onClick);
+  return button;
+}
+
+async function loadWorkspace() {
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', currentUser.id);
+
+  if (error) throw error;
+
+  if (!data?.length) {
+    throw new Error('Tu usuario no tiene ningún espacio de trabajo.');
+  }
+
+  const membership = data.find(x => x.role === 'owner');
+
+  if (!membership) {
+    throw new Error('No se ha encontrado tu espacio personal.');
+  }
+
+  workspaceId = membership.workspace_id;
+
+  const { data: workspace, error: workspaceError } = await supabase
+    .from('workspaces')
+    .select('name')
+    .eq('id', workspaceId)
+    .single();
+
+  if (workspaceError) throw workspaceError;
+
+  $('workspaceName').textContent = 'Espacio: ' + workspace.name;
+}
+
+async function loadAll() {
+  if (!workspaceId || loading) return;
+
+  loading = true;
+
+  try {
+    const results = await Promise.all([
+      supabase.from('tasks')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false }),
+
+      supabase.from('projects')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false }),
+
+      supabase.from('areas')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('name'),
+
+      supabase.from('contexts')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('name')
+    ]);
+
+    for (const result of results) {
+      if (result.error) throw result.error;
+    }
+
+    tasks = results[0].data || [];
+    projects = results[1].data || [];
+    areas = results[2].data || [];
+    contexts = results[3].data || [];
+
+    renderAll();
+    if (currentView === 'weekly') renderWeeklyPhases();
+
+  } catch (error) {
+    errorMessage(error);
+  } finally {
+    loading = false;
+  }
+}
+
+function dateOnlyLocal(date) {
+  const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'), d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function mondayOf(date) {
+  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  d.setDate(d.getDate() - ((d.getDay()+6)%7));
+  return d;
+}
+function weeklyDefaults() {
+  return Object.fromEntries(WEEKLY_PHASES.map(p=>[p.id,{done:false,note:''}]));
+}
+function weeklyPhaseData() {
+  const stored=weeklyReview?.phases || {};
+  return Object.fromEntries(WEEKLY_PHASES.map(p=>[p.id,{done:!!stored[p.id]?.done,note:stored[p.id]?.note || ''}]));
+}
+async function loadWeeklyReview() {
+  if(!workspaceId || !currentUser) return;
+  const weekStart=dateOnlyLocal(mondayOf(new Date()));
+  $('weeklyPeriod').textContent='Semana del '+mondayOf(new Date()).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
+  const {data,error}=await supabase.from('weekly_reviews').select('*').eq('workspace_id',workspaceId).eq('user_id',currentUser.id).eq('week_start',weekStart).order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(error){$('weeklySaveStatus').textContent='No se pudo cargar la revisión: '+error.message;return;}
+  weeklyReview=data || null;
+  $('weeklyNotes').value=weeklyReview?.notes || '';
+  renderWeeklyPhases();
+  await loadWeeklyHistory();
+}
+function weeklyOpenTasks() {
+  return tasks.filter(t => !['completed','archived'].includes(t.status));
+}
+function weeklyProjectDiagnostics() {
+  const active = projects.filter(p => p.status === 'active');
+  const nextActions = tasks.filter(t => t.kind === 'action' && ['active','scheduled'].includes(t.status));
+  const withoutNext = active.filter(p => !nextActions.some(t => t.project_id === p.id));
+  const stale = active.filter(p => {
+    const related = tasks.filter(t => t.project_id === p.id);
+    const stamps = [p.updated_at,p.created_at,...related.flatMap(t => [t.updated_at,t.created_at])].filter(Boolean).map(v => new Date(v).getTime()).filter(Number.isFinite);
+    if (!stamps.length) return false;
+    return (Date.now() - Math.max(...stamps)) > 30*86400000;
+  });
+  return {active,withoutNext,stale};
+}
+function getWeeklyData() {
+  const today = startOfDay(new Date());
+  const horizon = new Date(today); horizon.setDate(horizon.getDate()+7);
+  const open = weeklyOpenTasks();
+  const inbox = tasks.filter(t => t.status === 'inbox');
+  const someday = tasks.filter(t => t.kind === 'someday_maybe' && !['completed','archived'].includes(t.status));
+  const waiting = open.filter(t => t.status === 'waiting');
+  const actionable = open.filter(t => t.kind === 'action' && ['active','scheduled','waiting'].includes(t.status));
+  const overdue = open.filter(t => {const d=parseLocalDate(t.due_at);return d && d<today;});
+  const inSeven = open.filter(t => [t.available_from,t.due_at].some(v=>{const d=parseLocalDate(v);return d && d>=today && d<horizon;}));
+  const later = open.filter(t => [t.available_from,t.due_at].some(v=>{const d=parseLocalDate(v);return d && d>=horizon;}));
+  const oldSomeday = someday.filter(t => t.created_at && (Date.now()-new Date(t.created_at).getTime())>90*86400000);
+  const projectInfo = weeklyProjectDiagnostics();
+  return {today, inbox, someday, waiting, actionable, overdue, inSeven, later, oldSomeday, projectInfo, open};
+}
+function getWeeklyCounts() {
+  const d=getWeeklyData();
+  return {
+    collect:{label:`${d.inbox.length} en bandeja`,tone:d.inbox.length?'warn':'zero',key:'inbox'},
+    process:{label:`${d.inbox.length} por procesar`,tone:d.inbox.length?'warn':'zero',key:'inbox'},
+    projects:{label:`${d.projectInfo.active.length} activos · ${d.projectInfo.withoutNext.length} sin próxima acción`,tone:d.projectInfo.withoutNext.length?'warn':'muted',key:'projects'},
+    actions:{label:`${d.actionable.length} próximas acciones · ${d.waiting.length} en espera`,tone:d.waiting.length?'warn':'muted',key:'actions'},
+    agenda:{label:`${d.overdue.length} vencidas · ${d.inSeven.length} en 7 días · ${d.later.length} posteriores`,tone:d.overdue.length?'warn':'muted',key:'agenda'},
+    someday:{label:`${d.someday.length} ideas · ${d.oldSomeday.length} antiguas`,tone:d.oldSomeday.length?'warn':(d.someday.length?'muted':'zero'),key:'someday'},
+    creative:{label:'Captura libre',tone:'muted',key:'creative'}
+  };
+}
+function renderWeeklyOverview() {
+  const root=$('weeklyOverview'); if(!root)return;
+  const d=getWeeklyData();
+  const metrics=[
+    ['Bandeja',d.inbox.length],['Vencidas',d.overdue.length],['Proyectos activos',d.projectInfo.active.length],
+    ['Sin próxima acción',d.projectInfo.withoutNext.length],['En espera',d.waiting.length],['Ideas antiguas',d.oldSomeday.length]
+  ];
+  root.innerHTML='<strong>Diagnóstico del sistema</strong><p class="weekly-hint">Indicadores calculados con tus tareas y proyectos actuales. Pulsa los contadores de cada fase para revisar los elementos.</p>';
+  const grid=document.createElement('div');grid.className='weekly-metrics';
+  metrics.forEach(([label,value])=>{const box=document.createElement('div');box.className='weekly-metric';const n=document.createElement('strong');n.textContent=value;const l=document.createElement('span');l.textContent=label;box.append(n,l);grid.append(box);});
+  root.append(grid);
+  const issues=document.createElement('div');issues.className='weekly-issues';
+  const cards=[
+    ['Proyectos sin próxima acción',d.projectInfo.withoutNext.length,'Revisa el siguiente paso físico y concreto.'],
+    ['Proyectos sin actividad reciente',d.projectInfo.stale.length,'Se consideran inactivos si no hay cambios en 30 días.'],
+    ['Tareas en espera',d.waiting.length,'Comprueba persona, motivo y necesidad de seguimiento.'],
+    ['Elementos antiguos en Algún día',d.oldSomeday.length,'Se consideran antiguos a partir de 90 días desde su creación.']
+  ];
+  cards.forEach(([title,count,desc],i)=>{const c=document.createElement('div');c.className='weekly-issue';const b=document.createElement('strong');b.textContent=title+' · '+count;const t=document.createElement('span');t.textContent=desc;c.append(b,t);const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.style.marginTop='8px';btn.textContent='Revisar';btn.onclick=()=>openWeeklyModal(['projects','stale','waiting','oldSomeday'][i]);c.append(btn);issues.append(c);});
+  root.append(issues);
+}
+function weeklyItemsFor(key) {
+  const d=getWeeklyData();
+  if(key==='inbox')return {title:'Tareas de la bandeja',items:d.inbox,kind:'tasks'};
+  if(key==='projects')return {title:'Proyectos que necesitan revisión',items:[...d.projectInfo.withoutNext.map(p=>({project:p,reason:'Sin próxima acción'})),...d.projectInfo.stale.filter(p=>!d.projectInfo.withoutNext.some(x=>x.id===p.id)).map(p=>({project:p,reason:'Sin actividad en más de 30 días'}))],kind:'projects'};
+  if(key==='actions')return {title:'Próximas acciones',items:d.actionable,kind:'tasks'};
+  if(key==='waiting')return {title:'Tareas en espera',items:d.waiting,kind:'tasks'};
+  if(key==='agenda')return {title:'Agenda: vencidas, próximos siete días y posteriores',items:[...d.overdue,...d.inSeven,...d.later].filter((t,i,a)=>a.findIndex(x=>x.id===t.id)===i),kind:'tasks'};
+  if(key==='someday')return {title:'Algún día / Tal vez',items:d.someday,kind:'tasks'};
+  if(key==='oldSomeday')return {title:'Ideas antiguas (más de 90 días)',items:d.oldSomeday,kind:'tasks'};
+  if(key==='stale')return {title:'Proyectos sin actividad reciente',items:d.projectInfo.stale.map(p=>({project:p,reason:'Sin actividad en más de 30 días'})),kind:'projects'};
+  return {title:'Revisión',items:[],kind:'tasks'};
+}
+function openWeeklyModal(key) {
+  const result=weeklyItemsFor(key);$('weeklyModalTitle').textContent=result.title;
+  const body=$('weeklyModalBody');body.innerHTML='';
+  if(!result.items.length){body.textContent='No hay elementos que requieran atención en esta categoría.';}
+  result.items.forEach(item=>{
+    const wrap=document.createElement('div');wrap.className='weekly-modal-item';
+    if(result.kind==='projects'){
+      const p=item.project || item;const title=document.createElement('strong');title.textContent=p.name;
+      const info=document.createElement('small');info.textContent=item.reason || 'Proyecto activo';wrap.append(title,info);
+      const acts=document.createElement('div');acts.className='weekly-modal-actions';const go=document.createElement('button');go.type='button';go.textContent='Ver proyectos';go.onclick=()=>{closeWeeklyModal();document.querySelector('[data-view="projects"]').click();};acts.append(go);wrap.append(acts);
+    } else {
+      const title=document.createElement('strong');title.textContent=item.title || 'Tarea sin título';
+      const details=document.createElement('small');const project=projects.find(p=>p.id===item.project_id);details.textContent=[item.status==='waiting'?'En espera':'Estado: '+item.status,item.waiting_for?'Esperando a: '+item.waiting_for:'',item.status==='waiting'?'En espera desde: '+new Date(item.updated_at||item.created_at||Date.now()).toLocaleDateString('es-ES'):'',project?'Proyecto: '+project.name:'',item.due_at?'Vence: '+String(item.due_at).slice(0,10):'',item.available_from?'Disponible: '+String(item.available_from).slice(0,10):''].filter(Boolean).join(' · ');
+      const acts=document.createElement('div');acts.className='weekly-modal-actions';const edit=document.createElement('button');edit.type='button';edit.textContent='Abrir tarea';edit.onclick=()=>{closeWeeklyModal();openTaskDetails(item.id);};acts.append(edit);wrap.append(title,details,acts);
+    }
+    body.append(wrap);
+  });
+  $('weeklyModal').classList.remove('hidden');
+}
+function closeWeeklyModal(){$('weeklyModal').classList.add('hidden');}
+$('closeWeeklyModal').addEventListener('click',closeWeeklyModal);
+$('weeklyModal').addEventListener('click',e=>{if(e.target===$('weeklyModal'))closeWeeklyModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('weeklyModal').classList.contains('hidden'))closeWeeklyModal();});
+function renderWeeklyReport() {
+  const root=$('weeklyReport');if(!root)return;if(!weeklyReview?.completed_at){root.classList.add('hidden');return;}
+  const d=weeklyReview.phases?._summary;
+  root.classList.remove('hidden');root.innerHTML='<strong>Revisión finalizada</strong><p class="weekly-hint">Resumen del estado del sistema en el momento de cerrar esta revisión.</p>';
+  if(!d){const p=document.createElement('p');p.className='small';p.textContent='Esta revisión se completó antes de activar el informe con indicadores históricos.';root.append(p);return;}
+  const grid=document.createElement('div');grid.className='weekly-metrics';
+  [['Bandeja',d.inbox],['Vencidas',d.overdue],['Proyectos activos',d.activeProjects],['Sin próxima acción',d.projectsWithoutNext],['En espera',d.waiting],['Algún día / Tal vez',d.someday]].forEach(([label,value])=>{const box=document.createElement('div');box.className='weekly-metric';const n=document.createElement('strong');n.textContent=Number(value)||0;const l=document.createElement('span');l.textContent=label;box.append(n,l);grid.append(box);});
+  root.append(grid);
+}
+
+function renderWeeklyPhases() {
+  const root=$('weeklyPhases'); if(!root)return;
+  const data=weeklyPhaseData();
+  root.innerHTML='';
+  WEEKLY_PHASES.forEach(phase=>{
+    const item=data[phase.id], article=document.createElement('article'); article.className='weekly-phase';
+    const head=document.createElement('div');head.className='weekly-phase-head';
+    const check=document.createElement('input');check.type='checkbox';check.checked=item.done;check.setAttribute('aria-label','Marcar '+phase.title+' como completada');
+    const body=document.createElement('div');body.style.flex='1';
+    const titleWrap=document.createElement('div');titleWrap.className='weekly-phase-title';
+    const title=document.createElement('h3');title.textContent=phase.title;
+    const count=getWeeklyCounts()[phase.id];
+    const badge=document.createElement('button');badge.type='button';badge.className='weekly-count '+count.tone;badge.textContent=count.label;badge.title=count.key==='creative'?'Indicador informativo':'Pulsa para revisar estos elementos';badge.disabled=count.key==='creative';if(count.key!=='creative')badge.addEventListener('click',()=>openWeeklyModal(count.key));
+    titleWrap.append(title,badge);
+    if(phase.id==='actions'){const waitingBtn=document.createElement('button');waitingBtn.type='button';waitingBtn.className='weekly-count warn';waitingBtn.textContent=getWeeklyData().waiting.length+' en espera · revisar';waitingBtn.title='Revisar personas y seguimientos pendientes';waitingBtn.addEventListener('click',()=>openWeeklyModal('waiting'));titleWrap.append(waitingBtn);}
+    if(phase.id==='someday'){const oldBtn=document.createElement('button');oldBtn.type='button';oldBtn.className='weekly-count warn';oldBtn.textContent=getWeeklyData().oldSomeday.length+' antiguas · revisar';oldBtn.title='Revisar ideas con más de 90 días';oldBtn.addEventListener('click',()=>openWeeklyModal('oldSomeday'));titleWrap.append(oldBtn);}
+    const desc=document.createElement('p');desc.className='small';desc.textContent=phase.description;
+    const note=document.createElement('textarea');note.placeholder='Anotaciones de esta fase (opcional)';note.value=item.note;note.setAttribute('aria-label','Notas: '+phase.title);
+    check.addEventListener('change',()=>{data[phase.id].done=check.checked;saveWeeklyChanges(data);updateWeeklyProgress(data);});
+    note.addEventListener('input',()=>{data[phase.id].note=note.value;scheduleWeeklySave(data);});
+    body.append(titleWrap,desc,note);head.append(check,body);article.append(head);root.append(article);
+  });
+  renderWeeklyOverview();
+  renderWeeklyReport();
+  updateWeeklyProgress(data);
+}
+function updateWeeklyProgress(data=weeklyPhaseData()) {
+  const done=WEEKLY_PHASES.filter(p=>data[p.id]?.done).length;
+  $('weeklyProgressText').textContent=`${done} de 7 fases completadas`;
+  $('weeklyProgressBar').style.width=(done/7*100)+'%';
+  $('finishWeekly').disabled=done!==7;
+}
+function scheduleWeeklySave(data) {
+  $('weeklySaveStatus').textContent='Cambios pendientes de guardar…';
+  clearTimeout(weeklySaveTimer);
+  weeklySaveTimer=setTimeout(()=>saveWeeklyChanges(data),700);
+}
+async function saveWeeklyChanges(data=weeklyPhaseData(), completed=false) {
+  if(!workspaceId || !currentUser || weeklySaving)return;
+  weeklySaving=true; $('weeklySaveStatus').textContent='Guardando…';
+  const weekStart=dateOnlyLocal(mondayOf(new Date()));
+  const snapshot=getWeeklyData();
+  const phasesPayload={...data,...(completed?{_summary:{inbox:snapshot.inbox.length,overdue:snapshot.overdue.length,activeProjects:snapshot.projectInfo.active.length,projectsWithoutNext:snapshot.projectInfo.withoutNext.length,waiting:snapshot.waiting.length,someday:snapshot.someday.length,captured_at:new Date().toISOString()}}:(weeklyReview?.phases?._summary?{_summary:weeklyReview.phases._summary}:{}))};
+  const payload={workspace_id:workspaceId,user_id:currentUser.id,week_start:weekStart,notes:$('weeklyNotes').value,phases:phasesPayload,completed_at:completed?new Date().toISOString():(WEEKLY_PHASES.every(p=>data[p.id]?.done)?(weeklyReview?.completed_at || null):null)};
+  try {
+    let result;
+    if(weeklyReview?.id) result=await supabase.from('weekly_reviews').update(payload).eq('id',weeklyReview.id).eq('workspace_id',workspaceId).select().single();
+    else result=await supabase.from('weekly_reviews').insert(payload).select().single();
+    if(result.error)throw result.error;
+    weeklyReview=result.data;
+    renderWeeklyReport();
+    $('weeklySaveStatus').textContent=completed?'Revisión semanal finalizada y guardada.':'Guardado en Supabase · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    await loadWeeklyHistory();
+  } catch(error) {$('weeklySaveStatus').textContent='Error al guardar: '+error.message;}
+  finally {weeklySaving=false;}
+}
+async function loadWeeklyHistory() {
+  const {data,error}=await supabase.from('weekly_reviews').select('id,week_start,completed_at,created_at,phases').eq('workspace_id',workspaceId).eq('user_id',currentUser.id).order('week_start',{ascending:false}).limit(12);
+  const root=$('weeklyHistory');root.innerHTML='';
+  if(error){root.textContent='No se pudo cargar el historial.';return;}
+  if(!data?.length){root.innerHTML='<p class="small">Todavía no hay revisiones anteriores.</p>';return;}
+  const snapshots=data.filter(r=>r.completed_at && r.phases?._summary).slice(0,2);
+  if(snapshots.length===2){const a=snapshots[0].phases._summary,b=snapshots[1].phases._summary;const delta=(key)=>Number(a[key]||0)-Number(b[key]||0);const compare=document.createElement('div');compare.className='weekly-issue';const heading=document.createElement('strong');heading.textContent='Comparativa con la revisión anterior';const detail=document.createElement('span');detail.textContent='Bandeja: '+(delta('inbox')>0?'+':'')+delta('inbox')+' · Vencidas: '+(delta('overdue')>0?'+':'')+delta('overdue')+' · Proyectos sin próxima acción: '+(delta('projectsWithoutNext')>0?'+':'')+delta('projectsWithoutNext')+' · En espera: '+(delta('waiting')>0?'+':'')+delta('waiting');compare.append(heading,detail);root.append(compare);}
+  data.forEach(row=>{const div=document.createElement('div');div.className='item weekly-history-row';const label=document.createElement('span');label.textContent='Semana del '+new Date(row.week_start+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});const status=document.createElement('span');status.className='small';const done=WEEKLY_PHASES.filter(p=>row.phases?.[p.id]?.done).length;status.textContent=(row.completed_at?'Completada':'En curso')+' · '+done+'/7 fases';div.append(label,status);if(row.phases?._summary){const summary=document.createElement('small');summary.className='small';summary.textContent='Bandeja: '+row.phases._summary.inbox+' · Vencidas: '+row.phases._summary.overdue+' · Proyectos sin próxima acción: '+row.phases._summary.projectsWithoutNext;div.append(summary);}root.append(div);});
+}
+$('weeklyNotes').addEventListener('input',()=>scheduleWeeklySave(weeklyPhaseData()));
+$('finishWeekly').addEventListener('click',()=>saveWeeklyChanges(weeklyPhaseData(),true));
+
+function renderAll() {
+  renderTasks('inboxTasks', tasks.filter(t =>
+    t.status === 'inbox'
+  ));
+
+  renderTasks('actionTasks', tasks.filter(t =>
+    t.kind === 'action' &&
+    ['active','scheduled','waiting'].includes(t.status)
+  ));
+
+  renderTasks('somedayTasks', tasks.filter(t =>
+    t.kind === 'someday_maybe' && t.status !== 'completed'
+  ));
+
+  renderTasks('referenceTasks', tasks.filter(t =>
+    t.kind === 'reference' && t.status !== 'completed'
+  ));
+
+  renderProjects();
+  renderAreas();
+  renderContexts();
+  renderAgenda();
+  renderHistory();
+}
+
+function optionList(items, selected, placeholder) {
+  let html = `<option value="">${placeholder}</option>`;
+
+  items.forEach(item => {
+    const chosen = item.id === selected ? 'selected' : '';
+    html += `<option value="${item.id}" ${chosen}>${escapeText(item.name)}</option>`;
+  });
+
+  return html;
+}
+
+/* Convierte una fecha YYYY-MM-DD sin aplicar desfase horario */
+function parseLocalDate(value) {
+  if (!value) return null;
+
+  const parts = String(value).substring(0, 10).split('-').map(Number);
+
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function localDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function startOfDay(date) {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+function toLocalDateTimeInput(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+}
+function openTaskDetails(taskId) {
+  const task = tasks.find(t => t.id === taskId); if (!task) return;
+  $('detailTitle').value = task.title || ''; $('detailNotes').value = task.notes || '';
+  $('detailKind').value = task.kind || 'action'; $('detailStatus').value = task.status || 'inbox';
+  $('detailProject').innerHTML = optionList(projects, task.project_id, 'Sin proyecto');
+  $('detailArea').innerHTML = optionList(areas, task.area_id, 'Sin área');
+  $('detailContext').innerHTML = optionList(contexts, task.context_id, 'Sin contexto');
+  $('detailWaiting').value = task.waiting_for || '';
+  $('detailScheduled').value = task.available_from ? String(task.available_from).slice(0,10) : '';
+  $('detailDue').value = task.due_at ? String(task.due_at).slice(0,10) : '';
+  $('detailReminder').value = toLocalDateTimeInput(task.reminder_at);
+  $('taskDetailForm').dataset.taskId = task.id; $('taskDetailOverlay').classList.remove('hidden'); document.body.style.overflow = 'hidden';
+}
+function closeTaskDetails() { $('taskDetailOverlay').classList.add('hidden'); document.body.style.overflow = ''; }
+$('closeTaskDetail').addEventListener('click', closeTaskDetails); $('cancelTaskDetail').addEventListener('click', closeTaskDetails);
+$('taskDetailOverlay').addEventListener('click', e => { if (e.target === $('taskDetailOverlay')) closeTaskDetails(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('taskDetailOverlay').classList.contains('hidden')) closeTaskDetails(); });
+$('taskDetailForm').addEventListener('submit', async e => {
+  e.preventDefault(); const id = e.currentTarget.dataset.taskId; const task = tasks.find(t => t.id === id); if (!task) return;
+  const kind = $('detailKind').value, status = $('detailStatus').value;
+  const updates = {title:$('detailTitle').value.trim(),notes:$('detailNotes').value.trim() || null,kind,status,
+    project_id:$('detailProject').value || null,area_id:$('detailArea').value || null,context_id:$('detailContext').value || null,
+    waiting_for:kind === 'waiting_for' ? ($('detailWaiting').value.trim() || null) : null,
+    available_from:$('detailScheduled').value ? $('detailScheduled').value+'T00:00:00' : null,
+    due_at:$('detailDue').value ? $('detailDue').value+'T00:00:00' : null,
+    reminder_at:$('detailReminder').value ? new Date($('detailReminder').value).toISOString() : null,
+    completed_at:status === 'completed' ? (task.completed_at || new Date().toISOString()) : null,updated_at:new Date().toISOString()};
+  if (!updates.title) { alert('El título es obligatorio.'); return; }
+  const btn=e.currentTarget.querySelector('button[type="submit"]'); btn.disabled=true;
+  const {error}=await supabase.from('tasks').update(updates).eq('id',id).eq('workspace_id',workspaceId); btn.disabled=false;
+  if(error){errorMessage(error);return;} clearMessage();closeTaskDetails();await loadAll();
+});
+function renderTasks(containerId, items) {
+  const container=$(containerId); container.innerHTML='';
+  if(!items.length){container.textContent='No hay elementos en este apartado.';return;}
+  items.forEach(task=>{
+    const row=document.createElement('div');row.className='task';
+    const isOverdue=task.status!=='completed' && task.due_at && parseLocalDate(task.due_at)<startOfDay(new Date());
+    row.classList.add(task.status==='completed'?'state-completed':(['archived'].includes(task.status)||task.kind==='reference'?'state-muted':task.status==='waiting'?'state-waiting':isOverdue?'state-overdue':'state-action'));
+    const main=document.createElement('div');main.className='task-mainline';
+    const title=document.createElement('div');title.className='task-title';title.textContent=task.title||'Sin título';title.tabIndex=0;title.setAttribute('role','button');
+    title.setAttribute('aria-label','Abrir detalles de '+(task.title||'la tarea'));title.addEventListener('click',()=>openTaskDetails(task.id));
+    title.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTaskDetails(task.id);}});main.append(title);
+    const badges=document.createElement('div');badges.className='task-date-badges';
+    if(task.available_from){const b=document.createElement('span');b.className='date-badge';const d=parseLocalDate(task.available_from);b.textContent='Desde '+(d?d.toLocaleDateString('es-ES'):String(task.available_from).slice(0,10));badges.append(b);}
+    if(task.due_at){const b=document.createElement('span');b.className='date-badge due';const d=parseLocalDate(task.due_at);b.textContent='Límite '+(d?d.toLocaleDateString('es-ES'):String(task.due_at).slice(0,10));badges.append(b);}
+    if(task.reminder_at){const b=document.createElement('span');b.className='date-badge reminder';b.textContent='Aviso '+new Date(task.reminder_at).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'});badges.append(b);}
+    if(badges.childElementCount)main.append(badges);row.append(main);
+    if(task.notes){const desc=document.createElement('div');desc.className='task-description-preview';desc.textContent=task.notes;row.append(desc);}
+    const meta=document.createElement('div');meta.className='task-meta';const project=projects.find(p=>p.id===task.project_id),area=areas.find(a=>a.id===task.area_id),context=contexts.find(c=>c.id===task.context_id);
+    meta.textContent=[project?'Proyecto: '+project.name:'',area?'Área: '+area.name:'',context?'Contexto: '+context.name:'',task.status==='waiting'?'En espera':'',task.status==='completed'?'Realizada':'',task.status==='archived'?'Archivada':''].filter(Boolean).join(' · ');if(meta.textContent)row.append(meta);
+    const actions=document.createElement('div');actions.className='task-actions';actions.append(iconButton('edit','Ver / editar detalles','secondary',()=>openTaskDetails(task.id)));
+    if(task.status!=='completed')actions.append(iconButton('check','Marcar como realizada','green',async()=>{const now=new Date().toISOString();const {error}=await supabase.from('tasks').update({status:'completed',completed_at:now,updated_at:now}).eq('id',task.id).eq('workspace_id',workspaceId);if(error){errorMessage(error);return;}await loadAll();}));
+    actions.append(iconButton('archive','Archivar','secondary',async()=>{const {error}=await supabase.from('tasks').update({status:'archived',updated_at:new Date().toISOString()}).eq('id',task.id).eq('workspace_id',workspaceId);if(error){errorMessage(error);return;}await loadAll();}));
+    actions.append(iconButton('trash','Eliminar definitivamente','red',async()=>{if(!confirm('¿Eliminar definitivamente esta tarea? Esta acción no se puede deshacer.'))return;const {error}=await supabase.from('tasks').delete().eq('id',task.id).eq('workspace_id',workspaceId);if(error){errorMessage(error);return;}await loadAll();}));
+    row.append(actions);container.append(row);
+  });
+}
+
+/* AGENDA */
+
+function renderAgenda() {
+  const overdueContainer = $('agendaOverdue');
+  const periodContainer = $('agendaTasks');
+
+  if (!overdueContainer || !periodContainer) return;
+
+  overdueContainer.innerHTML = '';
+  periodContainer.innerHTML = '';
+
+  const today = startOfDay(new Date());
+  let start, end;
+
+  if (agendaMode === 'week') {
+    start = startOfDay(agendaDate);
+
+    const weekday = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - weekday);
+
+    end = new Date(start);
+    end.setDate(end.getDate() + 7);
+
+    const lastDay = new Date(end);
+    lastDay.setDate(lastDay.getDate() - 1);
+
+    $('agendaLabel').textContent =
+      'Semana del ' + start.toLocaleDateString('es-ES') +
+      ' al ' + lastDay.toLocaleDateString('es-ES');
+
+  } else {
+    start = new Date(
+      agendaDate.getFullYear(),
+      agendaDate.getMonth(),
+      1
+    );
+
+    end = new Date(
+      agendaDate.getFullYear(),
+      agendaDate.getMonth() + 1,
+      1
+    );
+
+    $('agendaLabel').textContent =
+      agendaDate.toLocaleDateString('es-ES', {
+        month: 'long',
+        year: 'numeric'
+      });
+  }
+
+  const activeTasks = tasks.filter(t =>
+    !['completed', 'archived'].includes(t.status)
+  );
+
+  const overdue = activeTasks.filter(t => {
+    const dueDate = parseLocalDate(t.due_at);
+    return dueDate && dueDate < today;
+  });
+
+  const inPeriod = activeTasks.filter(t => {
+    const dates = [t.available_from, t.due_at].filter(Boolean);
+
+    return dates.some(value => {
+      const date = parseLocalDate(value);
+      return date && date >= start && date < end;
+    });
+  });
+
+  function addAgendaItems(container, items) {
+    if (!items.length) {
+      container.textContent = 'No hay tareas en este apartado.';
+      return;
+    }
+    items.sort((a, b) => {
+      const dateA = a.available_from || a.due_at || '';
+      const dateB = b.available_from || b.due_at || '';
+      return dateA.localeCompare(dateB);
+    });
+    renderTasks(container.id, items);
+    items.forEach((task, index) => {
+      const row = container.children[index];
+      if (!row) return;
+      const dates = document.createElement('div');
+      dates.className = 'task-meta';
+      const details = [];
+      if (task.available_from) {
+        const date = parseLocalDate(task.available_from);
+        details.push('Programada: ' + date.toLocaleDateString('es-ES'));
+      }
+      if (task.due_at) {
+        const date = parseLocalDate(task.due_at);
+        details.push('Fecha límite: ' + date.toLocaleDateString('es-ES'));
+      }
+      dates.textContent = details.join(' · ');
+      const title = row.querySelector('.task-title');
+      if (title) title.after(dates);
+    });
+  }
+
+  addAgendaItems(overdueContainer, overdue);
+  addAgendaItems(periodContainer, inPeriod);
+}
+
+/* HISTORIAL */
+
+function renderHistory() {
+  const container = $('historyTasks');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  const completed = tasks
+    .filter(t => t.status === 'completed')
+    .sort((a, b) =>
+      (b.completed_at || '').localeCompare(a.completed_at || '')
+    );
+
+  if (!completed.length) {
+    container.textContent = 'Todavía no hay tareas completadas.';
+    return;
+  }
+
+  completed.forEach(task => {
+    const row = document.createElement('div');
+    row.className = 'task';
+
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = task.title;
+
+    const date = document.createElement('input');
+    date.type = 'datetime-local';
+    date.className = 'date-editor';
+
+    if (task.completed_at) {
+      const completedDate = new Date(task.completed_at);
+      const offset = completedDate.getTimezoneOffset();
+      const localDate = new Date(
+        completedDate.getTime() - offset * 60000
+      );
+
+      date.value = localDate.toISOString().slice(0, 16);
+    }
+
+    const save = iconButton('save', 'Guardar fecha de finalización');
+    save.style.marginTop = '8px';
+
+    save.onclick = async () => {
+      if (!date.value) {
+        alert('Selecciona una fecha de finalización.');
+        return;
+      }
+
+      save.disabled = true;
+
+      const completedAt = new Date(date.value).toISOString();
+
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          completed_at: completedAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', task.id)
+        .eq('workspace_id', workspaceId);
+
+      save.disabled = false;
+
+      if (error) {
+        errorMessage(error);
+        return;
+      }
+
+      clearMessage();
+      await loadAll();
+    };
+
+    row.append(title, date, save);
+    container.append(row);
+  });
+}
+
+function renderProjects() {
+  const container = $('projectsList');
+  container.innerHTML = '';
+
+  if (!projects.length) {
+    container.textContent = 'Todavía no tienes proyectos.';
+    return;
+  }
+
+  projects.forEach(project => {
+    const projectTasks = tasks.filter(t => t.project_id === project.id && t.status !== 'archived');
+    const pendingCount = projectTasks.filter(t => t.status !== 'completed').length;
+    const completedCount = projectTasks.filter(t => t.status === 'completed').length;
+
+    const card = document.createElement('div');
+    card.className = 'project-card';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'project-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+
+    const name = document.createElement('span');
+    name.textContent = project.name + (project.status === 'completed' ? ' (completado)' : '');
+
+    const count = document.createElement('span');
+    count.className = 'project-count';
+    count.textContent = `${pendingCount} pendientes · ${completedCount} realizadas  ›`;
+    toggle.append(name, count);
+
+    const details = document.createElement('div');
+    details.className = 'project-details hidden';
+
+    const taskList = document.createElement('div');
+    taskList.id = 'project-tasks-' + project.id;
+    details.append(taskList);
+
+    const projectAction = iconButton(
+      project.status === 'active' ? 'check' : 'edit',
+      project.status === 'active' ? 'Completar proyecto' : 'Reactivar proyecto',
+      project.status === 'active' ? 'green' : 'secondary',
+      async () => {
+        const completed = project.status === 'active';
+        const now = new Date().toISOString();
+        const { error } = await supabase.from('projects').update({
+          status: completed ? 'completed' : 'active',
+          completed_at: completed ? now : null,
+          updated_at: now
+        }).eq('id', project.id).eq('workspace_id', workspaceId);
+        if (error) { errorMessage(error); return; }
+        await loadAll();
+      }
+    );
+    projectAction.style.marginTop = '8px';
+    details.append(projectAction);
+
+    toggle.addEventListener('click', () => {
+      const opening = details.classList.contains('hidden');
+      details.classList.toggle('hidden', !opening);
+      toggle.setAttribute('aria-expanded', String(opening));
+      count.textContent = `${pendingCount} pendientes · ${completedCount} realizadas  ${opening ? '⌄' : '›'}`;
+      if (opening) renderTasks(taskList.id, projectTasks);
+    });
+
+    card.append(toggle, details);
+    container.append(card);
+  });
+}
+
+function renderAreas() {
+  const container = $('areasList');
+  container.innerHTML = '';
+
+  areas.forEach(area => {
+    const row = document.createElement('div');
+    row.className = 'item';
+
+    const name = document.createElement('span');
+    name.textContent = area.name;
+
+    const count = tasks.filter(t => t.area_id === area.id).length;
+    const detail = document.createElement('small');
+    detail.textContent = count + ' tareas';
+
+    row.append(name, detail);
+    container.append(row);
+  });
+
+  if (!areas.length) container.textContent = 'Todavía no tienes áreas.';
+}
+
+function renderContexts() {
+  const container = $('contextsList');
+  container.innerHTML = '';
+
+  contexts.forEach(context => {
+    const row = document.createElement('div');
+    row.className = 'item';
+
+    const name = document.createElement('span');
+    name.textContent = context.name;
+
+    const count = tasks.filter(t => t.context_id === context.id).length;
+    const detail = document.createElement('small');
+    detail.textContent = count + ' tareas';
+
+    row.append(name, detail);
+    container.append(row);
+  });
+
+  if (!contexts.length) container.textContent = 'Todavía no tienes contextos.';
+}
+
+function startRealtime() {
+  stopRealtime();
+
+  realtimeChannel = supabase
+    .channel('gtd-workspace-' + workspaceId)
+
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'tasks',
+      filter: 'workspace_id=eq.' + workspaceId
+    }, () => loadAll())
+
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'projects',
+      filter: 'workspace_id=eq.' + workspaceId
+    }, () => loadAll())
+
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'areas',
+      filter: 'workspace_id=eq.' + workspaceId
+    }, () => loadAll())
+
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'contexts',
+      filter: 'workspace_id=eq.' + workspaceId
+    }, () => loadAll())
+
+    .subscribe((status) => {
+      $('syncStatus').textContent =
+        status === 'SUBSCRIBED'
+          ? 'Sincronización: conectada'
+          : 'Sincronización: ' + status;
+
+      console.log('Realtime:', status);
+    });
+}
+
+function stopRealtime() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+}
+
+
+
+/* NOTIFICACIONES PUSH */
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Este navegador no admite Service Workers.');
+  }
+
+  serviceWorkerRegistration = await navigator.serviceWorker.register('./sw.js', {
+    scope: './'
+  });
+
+  await navigator.serviceWorker.ready;
+  return serviceWorkerRegistration;
+}
+
+async function updatePushStatus() {
+  const status = $('pushStatus');
+  const button = $('enablePush');
+
+  if (!status || !button) return;
+
+  if (!('Notification' in window) || !('serviceWorker' in navigator) ||
+      !('PushManager' in window)) {
+    status.textContent = 'Este navegador no admite notificaciones push.';
+    button.disabled = true;
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    status.textContent = 'Notificaciones bloqueadas en los ajustes del navegador.';
+    button.textContent = 'Notificaciones bloqueadas';
+    button.disabled = true;
+    return;
+  }
+
+  try {
+    const registration = serviceWorkerRegistration ||
+      await registerServiceWorker();
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription && Notification.permission === 'granted') {
+      status.textContent = 'Notificaciones activadas en este dispositivo.';
+      button.textContent = 'Notificaciones activadas';
+      button.classList.add('green');
+      button.disabled = true;
+    } else {
+      status.textContent = 'Notificaciones no activadas en este dispositivo.';
+      button.textContent = 'Activar notificaciones';
+      button.disabled = false;
+    }
+  } catch (error) {
+    status.textContent = 'No se pudo preparar el servicio de notificaciones.';
+    console.error('Error preparando notificaciones:', error);
+  }
+}
+
+async function enablePushNotifications() {
+  const button = $('enablePush');
+  const status = $('pushStatus');
+
+  if (!currentUser || !workspaceId) {
+    status.textContent = 'Inicia sesión antes de activar las notificaciones.';
+    return;
+  }
+
+  if (!('Notification' in window) || !('serviceWorker' in navigator) ||
+      !('PushManager' in window)) {
+    status.textContent = 'Este navegador no admite notificaciones push.';
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = 'Preparando notificaciones...';
+
+  try {
+    // La petición de permiso se realiza como consecuencia directa del clic.
+    const permission = await Notification.requestPermission();
+
+    if (permission !== 'granted') {
+      status.textContent = permission === 'denied'
+        ? 'Has bloqueado las notificaciones en este dispositivo.'
+        : 'No has concedido permiso para las notificaciones.';
+      button.disabled = permission === 'denied';
+      return;
+    }
+
+    const registration = await registerServiceWorker();
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+
+    const subscriptionJson = subscription.toJSON();
+    const keys = subscriptionJson.keys || {};
+
+    if (!subscriptionJson.endpoint || !keys.p256dh || !keys.auth) {
+      throw new Error('El navegador no ha proporcionado todos los datos de la suscripción.');
+    }
+
+    // Se guarda una suscripción independiente para cada dispositivo/navegador.
+    const { error } = await supabase
+      .from('push_subscriptions')
+      .upsert({
+        user_id: currentUser.id,
+        endpoint: subscriptionJson.endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        user_agent: navigator.userAgent
+      }, {
+        onConflict: 'endpoint'
+      });
+
+    if (error) throw error;
+
+    status.textContent = 'Notificaciones activadas correctamente en este dispositivo.';
+    button.textContent = 'Notificaciones activadas';
+    button.classList.add('green');
+    button.disabled = true;
+  } catch (error) {
+    console.error('Error activando notificaciones:', error);
+    status.textContent = 'No se pudieron activar: ' + (error.message || String(error));
+    button.disabled = false;
+  }
+}
+
+$('enablePush').addEventListener('click', enablePushNotifications);
+
+// Registrar el Service Worker al abrir la aplicación. El permiso solo se pide
+// cuando el usuario pulsa el botón "Activar notificaciones".
+if ('serviceWorker' in navigator) {
+  registerServiceWorker().catch(error => {
+    console.error('No se pudo registrar sw.js:', error);
+  });
+}
+
+
+async function startApp(user) {
+  stopRealtime();
+  currentUser = user;
+  clearMessage();
+
+  try {
+    await loadWorkspace();
+    await loadAll();
+
+    $('userEmail').textContent = user.email;
+    $('login').classList.add('hidden');
+    $('application').classList.remove('hidden');
+
+    startRealtime();
+    await updatePushStatus();
+  } catch (error) {
+    errorMessage(error);
+    $('application').classList.add('hidden');
+    $('login').classList.remove('hidden');
+  }
+}
+
+/* INICIO DE SESIÓN */
+
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('message').textContent = 'Conectando...';
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: $('email').value.trim(),
+    password: $('password').value
+  });
+
+  if (error) {
+    errorMessage(error);
+    return;
+  }
+
+  await startApp(data.user);
+});
+
+/* CAPTURA */
+
+$('captureForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const value = $('captureTitle').value.trim();
+  if (!value || !workspaceId) return;
+
+  const { error } = await supabase
+    .from('tasks')
+    .insert({
+      workspace_id: workspaceId,
+      title: value,
+      kind: 'action',
+      status: 'inbox'
+    });
+
+  if (error) {
+    errorMessage(error);
+    return;
+  }
+
+  $('captureTitle').value = '';
+  clearMessage();
+  await loadAll();
+});
+
+/* CREAR PROYECTOS */
+
+$('projectForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const name = $('projectName').value.trim();
+  if (!name) return;
+
+  const { error } = await supabase
+    .from('projects')
+    .insert({
+      workspace_id: workspaceId,
+      name,
+      status: 'active'
+    });
+
+  if (error) {
+    errorMessage(error);
+    return;
+  }
+
+  $('projectName').value = '';
+  await loadAll();
+});
+
+/* CREAR ÁREAS */
+
+$('areaForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const name = $('areaName').value.trim();
+  if (!name) return;
+
+  const { error } = await supabase
+    .from('areas')
+    .insert({
+      workspace_id: workspaceId,
+      name
+    });
+
+  if (error) {
+    errorMessage(error);
+    return;
+  }
+
+  $('areaName').value = '';
+  await loadAll();
+});
+
+/* CREAR CONTEXTOS */
+
+$('contextForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const name = $('contextName').value.trim();
+  if (!name) return;
+
+  const { error } = await supabase
+    .from('contexts')
+    .insert({
+      workspace_id: workspaceId,
+      name
+    });
+
+  if (error) {
+    errorMessage(error);
+    return;
+  }
+
+  $('contextName').value = '';
+  await loadAll();
+});
+
+/* NAVEGACIÓN */
+
+document.querySelectorAll('[data-view]').forEach(button => {
+  button.addEventListener('click', () => {
+    currentView = button.dataset.view;
+
+    document.querySelectorAll('[data-view]').forEach(b =>
+      b.classList.toggle('active', b === button)
+    );
+
+    [
+      'inbox',
+      'actions',
+      'agenda',
+      'history',
+      'projects',
+      'areas',
+      'contexts',
+      'someday',
+      'reference',
+      'weekly'
+    ].forEach(view => {
+      $('view-' + view).classList.toggle(
+        'hidden',
+        view !== currentView
+      );
+    });
+
+    if (currentView === 'agenda') renderAgenda();
+    if (currentView === 'history') renderHistory();
+    if (currentView === 'weekly') loadWeeklyReview();
+  });
+});
+
+/* CONTROLES DE AGENDA */
+
+$('agendaMode').addEventListener('change', e => {
+  agendaMode = e.target.value;
+  renderAgenda();
+});
+
+$('agendaPrev').addEventListener('click', () => {
+  if (agendaMode === 'week') {
+    agendaDate.setDate(agendaDate.getDate() - 7);
+  } else {
+    agendaDate.setDate(1);
+    agendaDate.setMonth(agendaDate.getMonth() - 1);
+  }
+
+  renderAgenda();
+});
+
+$('agendaNext').addEventListener('click', () => {
+  if (agendaMode === 'week') {
+    agendaDate.setDate(agendaDate.getDate() + 7);
+  } else {
+    agendaDate.setDate(1);
+    agendaDate.setMonth(agendaDate.getMonth() + 1);
+  }
+
+  renderAgenda();
+});
+
+$('agendaToday').addEventListener('click', () => {
+  agendaDate = new Date();
+  renderAgenda();
+});
+
+/* CERRAR SESIÓN */
+
+$('logout').onclick = async () => {
+  stopRealtime();
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    errorMessage(error);
+    return;
+  }
+
+  currentUser = null;
+  workspaceId = null;
+  tasks = [];
+  projects = [];
+  areas = [];
+  contexts = [];
+
+  $('application').classList.add('hidden');
+  $('login').classList.remove('hidden');
+  clearMessage();
+};
+
+/* EXPORTAR DATOS */
+
+$('export').onclick = () => {
+  const backup = {
+    exported_at: new Date().toISOString(),
+    tasks,
+    projects,
+    areas,
+    contexts
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: 'application/json' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  a.href = url;
+  a.download = 'mi-gtd-copia.json';
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+/* RECUPERAR SESIÓN */
+
+const { data: sessionData } = await supabase.auth.getSession();
+
+if (sessionData.session) {
+  await startApp(sessionData.session.user);
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    stopRealtime();
+
+    currentUser = null;
+    workspaceId = null;
+    tasks = [];
+    projects = [];
+    areas = [];
+    contexts = [];
+
+    $('application').classList.add('hidden');
+    $('login').classList.remove('hidden');
+  }
+});
+</script>
+</body>
+</html>
